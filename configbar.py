@@ -25,7 +25,7 @@ class ConfigBar:
             x = self._stepper(x, row2_y, f"Ring {i+1}", self.config.rings[i],
                               f"ring{i}_-", f"ring{i}_+")
             x += 30
-        self._add(x, row2_y, 160, 32, "noop", f"Key: {self.config.key}")
+        self._add(x, row2_y, 160, 32, "key_cycle", f"Key: {self.config.key}")
 
     def _add(self, x, y, w, h, action, label):
         self.buttons.append((pygame.Rect(x, y, w, h), action, label))
@@ -76,5 +76,10 @@ class ConfigBar:
             slot = int(action[4])
             kind = action.split("_", 1)[1]
             self.config.bump_ring(slot, -1 if kind == "-" else +1)
+            changed = True
+        elif action == "key_cycle":
+            letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+            idx = letters.find(self.config.key[0])
+            self.config.key = letters[(idx + 1) % 26] + self.config.key[1:]
             changed = True
         return changed

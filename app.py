@@ -136,6 +136,10 @@ class App:
         pygame.draw.circle(self.SCREEN, "#43aa8b", (int(dot_x), int(dot_y)), 3)
 
     def handle_key(self, event):
+        # Ignore screenshot/system keys (PrtSc maps to 'b' on some layouts)
+        if event.key in (pygame.K_PRINT, pygame.K_SYSREQ):
+            return
+
         if event.key == pygame.K_BACKSPACE:
             self.input_text = self.input_text[:-1]
             self.output_text = self.output_text[:-1]
@@ -153,7 +157,7 @@ class App:
             self.output_text += " "
         else:
             key = event.unicode.lower()
-            if key in "abcdefghijklmnopqrstuvwxyz":
+            if len(key) == 1 and key in "abcdefghijklmnopqrstuvwxyz":
                 letter = key.upper()
                 self.input_text += letter
                 self.path, cipher = self.enigma.encipher(letter)
