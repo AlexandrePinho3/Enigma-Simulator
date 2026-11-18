@@ -190,6 +190,9 @@ class App:
     def handle_click(self, pos):
         if self.screen_mode == "crypt":
             self.crypt_screen.handle_click(pos)
+            if self.crypt_screen.go_back:
+                self.screen_mode = "machine"
+                self.crypt_screen.go_back = False
             return
 
         if self.apply_rect.collidepoint(pos):

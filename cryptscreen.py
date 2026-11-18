@@ -1,5 +1,5 @@
 import pygame
-from cryptanalysis import crib_drag
+from cryptanalysis import crib_drag_fast as crib_drag
 
 
 class CryptScreen:
@@ -10,23 +10,30 @@ class CryptScreen:
 
         self.ciphertext = ""
         self.crib = ""
-        self.focused_field = None  # "ciphertext", "crib", or None
+        self.focused_field = None
         self.results = []
         self.status = "Type ciphertext, press Enter, then type crib, press Enter."
         self.running_attack = False
+        self.go_back = False  # Signal to App to switch screens
 
-        # Layout rects (set on first render)
+        # Layout rects
         self.cipher_rect = None
         self.crib_rect = None
         self.attack_rect = None
-        self.results_y_start = 400
+        self.back_rect = None
+        self.results_y_start = 420
 
     def layout(self, screen_w, screen_h):
         self.cipher_rect = pygame.Rect(60, 150, 800, 40)
         self.crib_rect = pygame.Rect(60, 220, 400, 40)
         self.attack_rect = pygame.Rect(60, 290, 200, 40)
+        self.back_rect = pygame.Rect(screen_w - 220, 60, 160, 40)  # Top right
 
     def handle_click(self, pos):
+        if self.back_rect.collidepoint(pos):
+            self.go_back = True
+            return
+
         if self.cipher_rect.collidepoint(pos):
             self.focused_field = "ciphertext"
         elif self.crib_rect.collidepoint(pos):
@@ -64,10 +71,9 @@ class CryptScreen:
         if len(self.crib) > len(self.ciphertext):
             self.status = "Crib longer than ciphertext."
             return
-        self.status = "Running... (this may take 30-60s)"
+
+        self.status = "Running..."
         self.running_attack = True
-        # Draw the "running" message before blocking
-        # (we'll draw again after; in a real app use threading)
         pygame.display.flip()
 
         self.results = crib_drag(
@@ -76,15 +82,29 @@ class CryptScreen:
             self.config.rings, self.config.plugboard,
         )
         self.running_attack = False
+
         if self.results:
             self.status = f"Found {len(self.results)} candidate rotor keys."
         else:
-            self.status = "No candidates found. (Try a different crib, or rotor/ring settings don't match.)"
+            self.status = "No candidates found. (Check your crib or settings.)"
 
     def draw(self, screen):
         screen.fill("#1a1a1a")
+
+        # Title
         title = self.font_large.render("Crib Dragging — Turing's Method", True, "white")
         screen.blit(title, (60, 60))
+
+        # Back Button
+        pygame.draw.rect(screen, "#4a5a6a", self.back_rect, border_radius=6)
+        pygame.draw.rect(screen, "white", self.back_rect, width=1, border_radius=6)
+        back_txt = self.font_small.render("Back to Machine", True, "white")
+        screen.blit(back_txt, back_txt.get_rect(center=self.back_rect.center))
+
+        # Current Settings Panel
+        settings_str = f"Rotor Order: {self.config.rotors} | Reflector: {self.config.reflector} | Rings: {self.config.rings} | Plugboard: {' '.join(self.config.plugboard)}"
+        settings_txt = self.font_small.render(settings_str, True, "#88aaff")  # Light blue
+        screen.blit(settings_txt, (60, 100))
 
         # Ciphertext field
         label = self.font_small.render("Ciphertext:", True, "white")
@@ -92,7 +112,8 @@ class CryptScreen:
         color = "#22aa77" if self.focused_field == "ciphertext" else "#4a5a6a"
         pygame.draw.rect(screen, "#222222", self.cipher_rect, border_radius=6)
         pygame.draw.rect(screen, color, self.cipher_rect, width=2, border_radius=6)
-        txt = self.font_small.render(self.ciphertext + ("|" if self.focused_field == "ciphertext" else ""), True, "white")
+        txt = self.font_small.render(self.ciphertext + ("|" if self.focused_field == "ciphertext" else ""), True,
+                                     "white")
         screen.blit(txt, (self.cipher_rect.x + 8, self.cipher_rect.y + 10))
 
         # Crib field
