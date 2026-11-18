@@ -7,6 +7,7 @@ from enigma import Enigma
 from draw import draw
 from config import Config, ROTOR_WIRINGS, REFLECTOR_WIRINGS
 from configbar import ConfigBar
+from cryptscreen import CryptScreen
 
 
 class App:
@@ -38,6 +39,9 @@ class App:
         self.enigma = self._build_enigma()
 
         self.config_bar = ConfigBar(self.config, self.SMALL)
+        self.crypt_screen = CryptScreen(self.config, self.SMALL, self.BOLD)
+        self.crypt_screen.layout(self.WIDTH, self.HEIGHT)
+        self.screen_mode = "machine"  # or "crypt"
         self.config_bar.layout(self.WIDTH, top_y=self.HEIGHT - 185)
         self.apply_rect = pygame.Rect(self.WIDTH - 220, self.HEIGHT - 60, 160, 40)
 
@@ -62,6 +66,11 @@ class App:
         self.apply_config()
 
     def render(self):
+        if self.screen_mode == "crypt":
+            self.crypt_screen.draw(self.SCREEN)
+            pygame.display.flip()
+            return
+
         self.SCREEN.fill("#333333")
 
         text = self.BOLD.render(self.input_text, True, "grey")
@@ -136,6 +145,15 @@ class App:
         pygame.draw.circle(self.SCREEN, "#43aa8b", (int(dot_x), int(dot_y)), 3)
 
     def handle_key(self, event):
+        # Tab toggles between machine and crypt screens
+        if event.key == pygame.K_TAB:
+            self.screen_mode = "crypt" if self.screen_mode == "machine" else "machine"
+            return
+
+        if self.screen_mode == "crypt":
+            self.crypt_screen.handle_key(event)
+            return
+
         # If the plugboard editor is focused, route keys to it
         if self.config_bar.plugboard_editor.handle_key(event):
             if self.config_bar.plugboard_editor.changed:
@@ -170,9 +188,14 @@ class App:
                 self._start_animation(self.path)
 
     def handle_click(self, pos):
+        if self.screen_mode == "crypt":
+            self.crypt_screen.handle_click(pos)
+            return
+
         if self.apply_rect.collidepoint(pos):
             self.apply_config()
             return
+
         action = self.config_bar.handle_click(pos)
         if action is not None and self.config_bar.apply_action(action):
             self.dirty = True
