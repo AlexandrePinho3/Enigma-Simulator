@@ -38,7 +38,7 @@ class App:
         self.enigma = self._build_enigma()
 
         self.config_bar = ConfigBar(self.config, self.SMALL)
-        self.config_bar.layout(self.WIDTH, top_y=self.HEIGHT - 130)
+        self.config_bar.layout(self.WIDTH, top_y=self.HEIGHT - 185)
         self.apply_rect = pygame.Rect(self.WIDTH - 220, self.HEIGHT - 60, 160, 40)
 
     def _build_enigma(self):
@@ -136,7 +136,14 @@ class App:
         pygame.draw.circle(self.SCREEN, "#43aa8b", (int(dot_x), int(dot_y)), 3)
 
     def handle_key(self, event):
-        # Ignore screenshot/system keys (PrtSc maps to 'b' on some layouts)
+        # If the plugboard editor is focused, route keys to it
+        if self.config_bar.plugboard_editor.handle_key(event):
+            if self.config_bar.plugboard_editor.changed:
+                self.dirty = True
+                self.config_bar.plugboard_editor.changed = False
+            return
+
+        # Ignore screenshot/system keys
         if event.key in (pygame.K_PRINT, pygame.K_SYSREQ):
             return
 
@@ -145,13 +152,11 @@ class App:
             self.output_text = self.output_text[:-1]
             self.path = []
             self.anim = None
-        elif event.key == pygame.K_r:
+        elif event.key == pygame.K_r and (pygame.key.get_mods() & pygame.KMOD_CTRL):
             self.reset_message()
         elif event.key == pygame.K_RETURN:
             if self.dirty:
                 self.apply_config()
-        elif event.key == pygame.K_DOWN:
-            self.enigma.r3.rotate()
         elif event.key == pygame.K_SPACE:
             self.input_text += " "
             self.output_text += " "
@@ -171,7 +176,7 @@ class App:
         action = self.config_bar.handle_click(pos)
         if action is not None and self.config_bar.apply_action(action):
             self.dirty = True
-            self.config_bar.layout(self.WIDTH, top_y=self.HEIGHT - 130)
+            self.config_bar.layout(self.WIDTH, top_y=self.HEIGHT - 185)
 
     def run(self):
         running = True
