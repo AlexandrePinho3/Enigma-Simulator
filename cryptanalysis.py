@@ -34,59 +34,7 @@ def crib_impossible_alignments(ciphertext, crib):
     return impossible
 
 
-def crib_drag(ciphertext, crib, rotor_names, reflector_name, rings,
-              plugboard_pairs, max_results=20):
-    """
-    Full crib-drag attack:
-    1. Rule out impossible alignments (self-encryption).
-    2. For each remaining alignment, try all 17,576 rotor start positions.
-    3. Return a list of (offset, rotor_key, plaintext_fragment) hits.
-    """
-    ciphertext = ciphertext.upper().replace(" ", "")
-    crib = crib.upper().replace(" ", "")
-    impossible = crib_impossible_alignments(ciphertext, crib)
-
-    results = []
-    letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-
-    for offset in range(len(ciphertext) - len(crib) + 1):
-        if offset in impossible:
-            continue
-
-        crib_segment = ciphertext[offset:offset + len(crib)]
-
-        # Try every rotor key
-        for a in letters:
-            for b in letters:
-                for c in letters:
-                    key = a + b + c
-                    enigma = make_enigma(rotor_names, reflector_name, rings, plugboard_pairs)
-                    enigma.set_key(key)
-
-                    # Advance the machine offset times (to skip earlier letters)
-                    for _ in range(offset):
-                        enigma.encipher("A")
-
-                    # Now encrypt the crib segment; see if it matches the crib
-                    recovered = ""
-                    for ch in crib_segment:
-                        _, out = enigma.encipher(ch)
-                        recovered += out
-
-                    if recovered == crib:
-                        results.append({
-                            "offset": offset,
-                            "key": key,
-                            "plaintext": recovered,
-                            "ciphertext_segment": crib_segment,
-                        })
-                        if len(results) >= max_results:
-                            return results
-
-    return results
-
-
-def crib_drag_fast(ciphertext, crib, rotor_names, reflector_name, rings, plugboard_pairs, max_results=20):
+def crib_drag(ciphertext, crib, rotor_names, reflector_name, rings, plugboard_pairs, max_results=20):
     ciphertext = ciphertext.upper().replace(" ", "")
     crib = crib.upper().replace(" ", "")
     impossible = crib_impossible_alignments(ciphertext, crib)

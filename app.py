@@ -1,4 +1,5 @@
 import pygame
+from geometry import compute_signal_points
 from keyboard import Keyboard
 from plugboard import Plugboard
 from rotor import Rotor
@@ -104,25 +105,16 @@ class App:
             return
         self.anim = {"path": list(path), "start": pygame.time.get_ticks()}
 
-    def _point_positions(self, path):
-        w = (self.WIDTH - self.MARGINS["left"] - self.MARGINS["right"] - 5 * self.GAP) / 6
-        h = (self.HEIGHT - 150) - self.MARGINS["top"] - self.MARGINS["bottom"]
-        y = [self.MARGINS["top"] + (s + 1) * h / 27 for s in path]
-        x = [self.WIDTH - self.MARGINS["right"] - w / 2]
-        for i in [4, 3, 2, 1, 0]:
-            x.append(self.MARGINS["left"] + i * (w + self.GAP) + w * 3/4)
-            x.append(self.MARGINS["left"] + i * (w + self.GAP) + w * 1/4)
-        x.append(self.MARGINS["left"] + w * 3/4)
-        for i in [1, 2, 3, 4]:
-            x.append(self.MARGINS["left"] + i * (w + self.GAP) + w * 1/4)
-            x.append(self.MARGINS["left"] + i * (w + self.GAP) + w * 3/4)
-        x.append(self.WIDTH - self.MARGINS["right"] - w / 2)
-        return list(zip(x, y))
-
     def _draw_animation(self):
         if self.anim is None:
             return
-        points = self._point_positions(self.anim["path"])
+        points = compute_signal_points(
+            self.anim["path"],
+            self.WIDTH,
+            self.HEIGHT - 150,
+            self.MARGINS,
+            self.GAP,
+        )
         elapsed = pygame.time.get_ticks() - self.anim["start"]
         seg_ms = self.ANIM_SPEED * 1000
         total_ms = seg_ms * (len(points) - 1)

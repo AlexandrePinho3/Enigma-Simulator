@@ -1,5 +1,5 @@
 import pygame
-from cryptanalysis import crib_drag_fast as crib_drag
+from cryptanalysis import crib_drag
 
 
 class CryptScreen:
