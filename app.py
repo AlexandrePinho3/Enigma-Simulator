@@ -9,6 +9,7 @@ from draw import draw
 from config import Config, ROTOR_WIRINGS, REFLECTOR_WIRINGS
 from configbar import ConfigBar
 from cryptscreen import CryptScreen
+from freqscreen import FreqScreen
 
 
 class App:
@@ -46,6 +47,10 @@ class App:
         self.config_bar.layout(self.WIDTH, top_y=self.HEIGHT - 185)
         self.apply_rect = pygame.Rect(self.WIDTH - 220, self.HEIGHT - 60, 160, 40)
 
+        self.freq_screen = FreqScreen(self.crypt_screen, self.SMALL, self.BOLD)
+        self.freq_screen.layout(self.WIDTH, self.HEIGHT)
+        self.screen_mode = "machine"  # "machine" | "crypt" | "freq"
+
     def _build_enigma(self):
         rotors = [Rotor(*ROTOR_WIRINGS[name]) for name in self.config.rotors]
         reflector = Reflector(REFLECTOR_WIRINGS[self.config.reflector])
@@ -69,6 +74,10 @@ class App:
     def render(self):
         if self.screen_mode == "crypt":
             self.crypt_screen.draw(self.SCREEN)
+            pygame.display.flip()
+            return
+        if self.screen_mode == "freq":
+            self.freq_screen.draw(self.SCREEN)
             pygame.display.flip()
             return
 
@@ -137,13 +146,21 @@ class App:
         pygame.draw.circle(self.SCREEN, "#43aa8b", (int(dot_x), int(dot_y)), 3)
 
     def handle_key(self, event):
-        # Tab toggles between machine and crypt screens
+        # Tab toggles between machine, crypt and frequency screens
         if event.key == pygame.K_TAB:
-            self.screen_mode = "crypt" if self.screen_mode == "machine" else "machine"
+            if self.screen_mode == "machine":
+                self.screen_mode = "crypt"
+            elif self.screen_mode == "crypt":
+                self.screen_mode = "freq"
+            else:
+                self.screen_mode = "machine"
             return
 
         if self.screen_mode == "crypt":
             self.crypt_screen.handle_key(event)
+            return
+        if self.screen_mode == "freq":
+            self.freq_screen.handle_key(event)
             return
 
         # If the plugboard editor is focused, route keys to it
@@ -185,6 +202,12 @@ class App:
             if self.crypt_screen.go_back:
                 self.screen_mode = "machine"
                 self.crypt_screen.go_back = False
+            return
+        if self.screen_mode == "freq":
+            self.freq_screen.handle_click(pos)
+            if self.freq_screen.go_back:
+                self.screen_mode = "machine"
+                self.freq_screen.go_back = False
             return
 
         if self.apply_rect.collidepoint(pos):
