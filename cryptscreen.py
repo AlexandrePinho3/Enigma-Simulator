@@ -88,6 +88,13 @@ class CryptScreen:
         else:
             self.status = "No candidates found. (Check your crib or settings.)"
 
+    def load_from_machine(self, ciphertext):
+        """Called by FreqScreen to auto-fill and focus."""
+        self.ciphertext = ciphertext
+        self.focused_field = "crib"   # Automatically focus the crib field
+        self.results = []             # Clear old results
+        self.status = "Loaded from machine. Enter a crib."
+
     def draw(self, screen):
         screen.fill("#1a1a1a")
 

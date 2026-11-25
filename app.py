@@ -29,6 +29,7 @@ class App:
 
         self.input_text = ""
         self.output_text = ""
+        self.last_ciphertext = ""
         self.path = []
         self.dirty = False
 
@@ -47,7 +48,7 @@ class App:
         self.config_bar.layout(self.WIDTH, top_y=self.HEIGHT - 185)
         self.apply_rect = pygame.Rect(self.WIDTH - 220, self.HEIGHT - 60, 160, 40)
 
-        self.freq_screen = FreqScreen(self.crypt_screen, self.SMALL, self.BOLD)
+        self.freq_screen = FreqScreen(self, self.crypt_screen, self.SMALL, self.BOLD)
         self.freq_screen.layout(self.WIDTH, self.HEIGHT)
         self.screen_mode = "machine"  # "machine" | "crypt" | "freq"
 
@@ -67,6 +68,7 @@ class App:
     def reset_message(self):
         self.input_text = ""
         self.output_text = ""
+        self.last_ciphertext = ""
         self.path = []
         self.anim = None
         self.apply_config()
@@ -194,6 +196,7 @@ class App:
                 self.input_text += letter
                 self.path, cipher = self.enigma.encipher(letter)
                 self.output_text += cipher
+                self.last_ciphertext = self.output_text
                 self._start_animation(self.path)
 
     def handle_click(self, pos):
@@ -208,6 +211,10 @@ class App:
             if self.freq_screen.go_back:
                 self.screen_mode = "machine"
                 self.freq_screen.go_back = False
+            if self.freq_screen.go_to_crypt:
+                self.crypt_screen.load_from_machine(self.last_ciphertext)
+                self.screen_mode = "crypt"
+                self.freq_screen.go_to_crypt = False
             return
 
         if self.apply_rect.collidepoint(pos):

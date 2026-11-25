@@ -15,19 +15,25 @@ ENGLISH_FREQ = {
 
 
 class FreqScreen:
-    def __init__(self, crypt_screen, font_small, font_large):
-        self.crypt_screen = crypt_screen  # we read ciphertext from here
+    def __init__(self, app, crypt_screen, font_small, font_large):
+        self.app = app
+        self.crypt_screen = crypt_screen
         self.font_small = font_small
         self.font_large = font_large
         self.go_back = False
+        self.go_to_crypt = False
         self.back_rect = None
+        self.attack_rect = None
 
     def layout(self, screen_w, screen_h):
         self.back_rect = pygame.Rect(screen_w - 220, 60, 160, 40)
+        self.attack_rect = pygame.Rect(60, 580, 200, 40)
 
     def handle_click(self, pos):
         if self.back_rect.collidepoint(pos):
             self.go_back = True
+        elif self.attack_rect.collidepoint(pos):
+            self.go_to_crypt = True
 
     def handle_key(self, event):
         pass  # read-only screen
@@ -57,11 +63,24 @@ class FreqScreen:
         back_txt = self.font_small.render("Back to Machine", True, "white")
         screen.blit(back_txt, back_txt.get_rect(center=self.back_rect.center))
 
+        # Try Attack Button
+        has_text = bool(self.app.last_ciphertext)
+        color = "#4a5a6a" if has_text else "#333333"
+        border = "white" if has_text else "#555555"
+
+        pygame.draw.rect(screen, color, self.attack_rect, border_radius=6)
+        pygame.draw.rect(screen, border, self.attack_rect, width=1, border_radius=6)
+
+        label = "Try Crib Attack"
+        txt_color = "white" if has_text else "grey"
+        btn_txt = self.font_small.render(label, True, txt_color)
+        screen.blit(btn_txt, btn_txt.get_rect(center=self.attack_rect.center))
+
         # Compute frequencies
         observed, total = self._count_frequencies()
 
         # Subtitle
-        subtitle = f"Ciphertext letters analyzed: {total}"
+        subtitle = f"Analyzing {total} letters from the Crypt screen ciphertext."
         screen.blit(self.font_small.render(subtitle, True, "#88aaff"), (60, 100))
 
         if total == 0:

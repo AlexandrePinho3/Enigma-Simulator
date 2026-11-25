@@ -62,3 +62,26 @@ def test_ring_setting_reference_vector():
     e.set_key("AAA")
     out = "".join(e.encipher("A")[1] for _ in range(5))
     assert out == "EWTYX", f"got {out}"
+
+
+def test_fast_crib_drag_matches_with_nondefault_rings():
+    """Fast crib_drag must agree with the slow one under arbitrary ring settings."""
+    from cryptanalysis import crib_drag, make_enigma
+
+    rotor_names = ["I", "II", "III"]
+    reflector = "B"
+    rings = (5, 7, 3)  # deliberately non-default
+    plugboard = ["AB", "CD"]
+
+    # Encrypt a known plaintext
+    e = make_enigma(rotor_names, reflector, rings, plugboard)
+    e.set_key("XFV")
+    plaintext = "HELLOWETTERBERICHT"
+    ciphertext = "".join(e.encipher(c)[1] for c in plaintext)
+
+    # Attack it with the same settings
+    results = crib_drag(ciphertext, "WETTER", rotor_names, reflector, rings, plugboard)
+
+    assert len(results) >= 1, "Attack failed with non-default rings"
+    assert results[0]["key"] == "XFV"
+    assert results[0]["offset"] == 5
